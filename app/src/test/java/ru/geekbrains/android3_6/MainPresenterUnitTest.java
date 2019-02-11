@@ -80,6 +80,37 @@ public class MainPresenterUnitTest {
     }
 
 
+    @Test
+    public void loadInfoFailure(){
+        Timber.d("loadInfoFailure");
 
+        User user = new User("googlesamples", "avatar_url", "repos_url");
+        Throwable throwable = new RuntimeException("No such user in cache");
+
+        TestComponent component = DaggerTestComponent.builder()
+                .testRepoModule(new TestRepoModule(){
+
+                    @Override
+                    public UsersRepo usersRepo() {
+                        UsersRepo repo = super.usersRepo();
+                        Mockito.when(repo.getUser(user.getLogin())).thenReturn(Single.create(emitter -> {
+                            emitter.onError(throwable);
+                        }));
+                        Mockito.when(repo.getUserRepos(user)).thenReturn(Single.create(emitter -> {
+                            emitter.onError(throwable);
+                        }));
+                        return repo;
+                    }
+        }).build();
+
+        component.inject(presenter);
+        presenter.attachView(mainView);
+        Mockito.verify(presenter).loadInfo("googlesamples");
+        testScheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+
+        Mockito.verify(mainView).showLoading();
+        Mockito.verify(mainView).hideLoading();
+        Mockito.verify(mainView).showError(throwable.getMessage());
+    }
 
 }
