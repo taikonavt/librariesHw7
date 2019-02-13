@@ -10,11 +10,15 @@ import org.junit.Test;
 import ru.geekbrains.android3_6.di.DaggerTestComponent;
 import ru.geekbrains.android3_6.di.TestComponent;
 import ru.geekbrains.android3_6.di.modules.ApiModule;
+import ru.geekbrains.android3_6.di.modules.CacheModule;
+import ru.geekbrains.android3_6.mvp.model.cache.ICache;
+import ru.geekbrains.android3_6.mvp.model.entity.Repository;
 import ru.geekbrains.android3_6.mvp.model.entity.User;
 import ru.geekbrains.android3_6.mvp.model.repo.UsersRepo;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -24,11 +28,14 @@ public class UserRepoInstrumentedTest {
     UsersRepo usersRepo;
 
     private static MockWebServer mockWebServer;
+    private static MockRoom mockRoom;
 
     @BeforeClass
     public static void setupClass() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
+        mockRoom = new MockRoom();
+        mockRoom.start();
     }
 
     @AfterClass
@@ -45,7 +52,14 @@ public class UserRepoInstrumentedTest {
                     public String baseUrlProduction() {
                         return mockWebServer.url("/").toString();
                     }
-                }).build();
+                })
+                .cacheModule(new CacheModule(){
+                    @Override
+                    public ICache roomCache() {
+                        return mockRoom;
+                    }
+                })
+                .build();
 
         //TODO: mock cache
         component.inject(this);
@@ -68,12 +82,28 @@ public class UserRepoInstrumentedTest {
 
     @Test
     public void getUserRepos(){
-        //TODO:
+        String id = "123456";
+        String name = "abcdef";
+
+        mockWebServer.enqueue(createUserReposResponse(id, name));
+        TestObserver<List<Repository>> observer = new TestObserver<>();
+        usersRepo.getUserRepos(new User("someuser", "avatar_url", "repos_url")).subscribe(observer);
+
+        observer.awaitTerminalEvent();
+
+        observer.assertValueCount(1);
+        assertEquals(observer.values().get(0).get(0).getId(), id);
+        assertEquals(observer.values().get(0).get(0).getName(), name);
     }
 
     private MockResponse createUserResponse(String login, String avatarUrl, String reposUrl){
         String body = "{\"login\":\"" + login + "\", \"avatar_url\":\"" + avatarUrl + "\", \"repos_url\":\"" + reposUrl + "\"}";
         return new MockResponse().setBody(body);
-
     }
+
+    private MockResponse createUserReposResponse(String id, String name){
+        String body = "[{\"id\": " + id + ", \"name\": \"" + name + "\"}]";
+        return new MockResponse().setBody(body);
+    }
+
 }
