@@ -1,24 +1,28 @@
 package ru.geekbrains.android3_6;
 
-import io.reactivex.observers.TestObserver;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import io.reactivex.observers.TestObserver;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import ru.geekbrains.android3_6.di.DaggerTestComponent;
 import ru.geekbrains.android3_6.di.TestComponent;
 import ru.geekbrains.android3_6.di.modules.ApiModule;
 import ru.geekbrains.android3_6.di.modules.CacheModule;
 import ru.geekbrains.android3_6.mvp.model.cache.ICache;
+import ru.geekbrains.android3_6.mvp.model.cache.RoomCache;
 import ru.geekbrains.android3_6.mvp.model.entity.Repository;
 import ru.geekbrains.android3_6.mvp.model.entity.User;
 import ru.geekbrains.android3_6.mvp.model.repo.UsersRepo;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -28,14 +32,11 @@ public class UserRepoInstrumentedTest {
     UsersRepo usersRepo;
 
     private static MockWebServer mockWebServer;
-    private static MockRoom mockRoom;
 
     @BeforeClass
     public static void setupClass() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-        mockRoom = new MockRoom();
-        mockRoom.start();
     }
 
     @AfterClass
@@ -56,7 +57,7 @@ public class UserRepoInstrumentedTest {
                 .cacheModule(new CacheModule(){
                     @Override
                     public ICache roomCache() {
-                        return mockRoom;
+                        return Mockito.mock(RoomCache.class);
                     }
                 })
                 .build();

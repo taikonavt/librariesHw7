@@ -2,6 +2,7 @@ package ru.geekbrains.android3_6.di;
 
 import dagger.Component;
 import ru.geekbrains.android3_6.UserRepoInstrumentedTest;
+import ru.geekbrains.android3_6.di.modules.CacheModule;
 import ru.geekbrains.android3_6.di.modules.RepoModule;
 
 import javax.inject.Singleton;
